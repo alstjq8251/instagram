@@ -2,26 +2,32 @@ package com.sparta.instagram.repository;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sparta.instagram.domain.Article;
 import com.sparta.instagram.domain.Image;
+import com.sparta.instagram.domain.Member;
 import com.sparta.instagram.domain.QArticle;
+import com.sparta.instagram.domain.dto.ArticleSearchCondition;
+import com.sparta.instagram.domain.dto.MemberSearchCondition;
 import com.sparta.instagram.domain.dto.Time;
 import com.sparta.instagram.domain.dto.responsedto.ArticleResponseDto;
+import com.sparta.instagram.domain.dto.responsedto.MemberDto;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import javax.jws.soap.SOAPBinding;
 import javax.persistence.EntityManager;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 import static com.sparta.instagram.domain.QArticle.*;
+import static com.sparta.instagram.domain.QMember.member;
+import static org.springframework.util.ObjectUtils.isEmpty;
 
 public class ArticleRepositoryImpl implements AritcleRepositoryCustom {
 
@@ -81,31 +87,70 @@ public class ArticleRepositoryImpl implements AritcleRepositoryCustom {
         return new SliceImpl<>(dto, pageable, hasNext);
     }
 
-    //    public Slice<BakeryMenuResponse> findBakeryMenuPageableByBakeryId(Long bakeryId, Pageable pageable) {
-//        List<BakeryMenuResponse> bakeryMenuResponseList = jpaQueryFactory
-//                .select(Projections.fields(BakeryMenuResponse.class,
-//                        menuReviews.menus.id.as("menuId"),
-//                        ...
-//        menuReviews.rating.avg().as("avgRating")))
-//                .from(menuReviews)
-//                .where(menuReviews.bakeries.id.eq(bakeryId))
-//                .groupBy(menuReviews.menus.id, menuReviews.menus.breadCategories.id, menuReviews.menus.breadCategories.name, menuReviews.menus.name, menuReviews.menus.price, menuReviews.menus.imgPath)
-//                .orderBy(menuReviews.id.count().desc(), menuReviews.rating.avg().desc())
-//                .offset(pageable.getOffset())
-//                .limit(pageable.getPageSize() + 1) // limit보다 데이터를 1개 더 들고와서, 해당 데이터가 있다면 hasNext 변수에 true를 넣어 알림
+    @Override
+    public List<ArticleResponseDto> search(ArticleSearchCondition condition, UserDetails userDetails) {
+        String info[] = userDetails.getUsername().split(" ");
+        List<Article> fetch = queryFactory
+                .selectFrom(article)
+                .where(userNicEq(condition.getContent())).fetch();
+        List <ArticleResponseDto> articleResponseDtoList = new ArrayList<>();
+        for(Article article1: fetch) {
+            List<String> imgUrl = article1.getImageList()
+                    .stream()
+                    .map(Image::getImgUrl)
+                    .collect(Collectors.toList());
+            long count=0;
+            boolean userFlag = false;
+            boolean userLike = false;
+            if(article1.getHeartmap().size()>0) {
+                Set<Map.Entry<String, Boolean>> entryset1 = article1.getHeartmap().entrySet();
+                for (Map.Entry<String, Boolean> entryset2 : entryset1) {
+                    if (entryset2.getValue())
+                        count++;
+                }
+            }
+            if(info[0].equals(article1.getUserId())){
+                userFlag=true;
+            }
+            if(article1.getHeartmap().containsKey(info[0])){
+                userLike = article1.getHeartmap().get(info[0]);
+            }
+            articleResponseDtoList.add(ArticleResponseDto.builder()
+                            .ImgUrl(imgUrl)
+                            .id(article1.getId())
+                            .userId(article1.getUserId())
+                            .userNic(article1.getUserNic())
+                            .TimeMsg(Time.calculateTime(article1.getCreatedAt()))
+                            .createdAt(article1.getCreatedAt())
+                            .modifiedAt(article1.getModifiedAt())
+                            .content(article1.getContent())
+                            .imageList(article1.getImageList())
+                            .heartcnt(count)
+                            .userLike(userLike)
+                            .userFlag(userFlag)
+                            .commentcnt(article1.getCommentList().size())
+                    .build());
+        }
+        return articleResponseDtoList.stream().sorted(Comparator.comparing(ArticleResponseDto::getModifiedAt).reversed()).collect(Collectors.toList());
+
+
+
+//        return queryFactory
+//                .select(new QMemberTeamDto(
+//                        member.id,
+//                        member.username,
+//                        member.age,
+//                        team.id,
+//                        team.name))
+//                .from(member)
+//                .leftJoin(member.team, team)
+//                .where(usernameEq(condition.getUserId())
+//                        )
 //                .fetch();
-//
-//        List<BakeryMenuResponse> content = new ArrayList<>();
-//        for (BakeryMenuResponse eachBakeryMenuResponse: bakeryMenuResponseList) {
-//            content.add(new BakeryMenuResponse(eachBakeryMenuResponse));
-//
-//        }
-//
-//        boolean hasNext = false;
-//        if (content.size() > pageable.getPageSize()) {
-//            content.remove(pageable.getPageSize());
-//            hasNext = true;
-//        }
-//        return new SliceImpl<>(content, pageable, hasNext);
-//    }
+    }
+
+    private BooleanExpression userNicEq(String content) {
+        return isEmpty(content) ? null : article.content.contains(content);
+    }
+
 }

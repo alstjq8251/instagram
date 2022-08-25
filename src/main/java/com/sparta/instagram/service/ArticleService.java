@@ -2,6 +2,7 @@ package com.sparta.instagram.service;
 
 
 import com.sparta.instagram.domain.*;
+import com.sparta.instagram.domain.dto.ArticleSearchCondition;
 import com.sparta.instagram.domain.dto.MemberSearchCondition;
 import com.sparta.instagram.domain.dto.requestdto.ArticleRequestDto;
 import com.sparta.instagram.domain.dto.responsedto.ArticleResponseDto;
@@ -93,18 +94,24 @@ public class ArticleService {
     //게시글 전체 조회
     public List<ArticleResponseDto> readArticle(UserDetails userDetails) {
         String info[] = userDetails.getUsername().split(" ");
-        boolean userFlag = false;
         long count = 0;
         List<Article> articleList = articleRepository.findAllByOrderByModifiedAtDesc();
         List<ArticleResponseDto> articleResponseDtoList = new ArrayList<>();
         for(Article article : articleList){
+            boolean userFlag = false;
+            boolean userLike = false;
             if(info[0].equals(article.getUserId())){
                 userFlag = true;
-            }else userFlag = false;
-            Set<Entry<String,Boolean>> entryset1 = article.getHeartmap().entrySet();
-            for(Entry<String,Boolean> entryset2 : entryset1){
-                if(entryset2.getValue() && entryset2.getKey().equals(info[0]))
-                    count++;
+            }
+            if(article.getHeartmap().size()>0) {
+                Set<Entry<String, Boolean>> entryset1 = article.getHeartmap().entrySet();
+                for (Entry<String, Boolean> entryset2 : entryset1) {
+                    if (entryset2.getValue())
+                        count++;
+                }
+            }
+            if(article.getHeartmap().containsKey(info[0])){
+                userLike = article.getHeartmap().get(info[0]);
             }
 //            if(heartRepository.existsByUserIdAndArticle(info[0],article)){
 //                article.setUserLike(true);
@@ -122,10 +129,9 @@ public class ArticleService {
                     .createdAt(article.getCreatedAt())
                     .modifiedAt(article.getModifiedAt())
                     .heartcnt(count)
-//                    .heartcnt(article.getHeartList().size())
                     .imageList(article.getImageList())
                     .commentcnt(article.getCommentList().size())
-                    .userLike(article.getHeartmap().get(info[0]))
+                    .userLike(userLike)
                     .userFlag(userFlag)
                     .TimeMsg(Time.calculateTime(article.getCreatedAt()))
                     .ImgUrl(imgUrl)
@@ -186,10 +192,12 @@ public class ArticleService {
         long count=0;
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다."));
-        article.fixHeartMap(info[0], !article.getHeartmap().get(info[0]));
+        if(article.getHeartmap().containsKey(info[0])) {
+            article.fixHeartMap(info[0], !article.getHeartmap().get(info[0]));
+        }else article.addHeartMap(info[0],true);
         Set<Entry<String,Boolean>> entryset1 = article.getHeartmap().entrySet();
         for(Entry<String,Boolean> entryset2 : entryset1){
-            if(entryset2.getValue() && entryset2.getKey().equals(info[0]))
+            if(entryset2.getValue())
                 count++;
         }
         return HeartResponseDto.builder()
@@ -199,6 +207,9 @@ public class ArticleService {
     }
 
 
-
+//    public Member readArticle1(Principaldetail principaldetail) {
+//        Member member = principaldetail.getMember();
+//        return member;
+//    }
 }
 

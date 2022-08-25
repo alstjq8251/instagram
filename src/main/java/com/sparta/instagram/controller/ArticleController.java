@@ -2,6 +2,7 @@ package com.sparta.instagram.controller;
 
 
 import com.sparta.instagram.domain.Article;
+import com.sparta.instagram.domain.dto.ArticleSearchCondition;
 import com.sparta.instagram.domain.dto.requestdto.ArticleRequestDto;
 import com.sparta.instagram.domain.dto.responsedto.ArticleResponseDto;
 import com.sparta.instagram.domain.dto.responsedto.HeartResponseDto;
@@ -38,10 +39,16 @@ public class ArticleController {
             @ApiResponse(code = 400, message = "Request타입 에러"),
             @ApiResponse(code = 500, message = "서버 에러")
     })
+
     @GetMapping("/auth")
     public List<ArticleResponseDto> readArticle(@AuthenticationPrincipal UserDetails userDetails) {
         return articleService.readArticle(userDetails);
     }
+
+//    @GetMapping("/auth/all")
+//    public Member readArticle(@AuthenticationPrincipal Principaldetail principaldetail) {
+//        return articleService.readArticle1(principaldetail);
+//    }
 
     @ApiOperation(value = "게시글 작성 API", notes = "토큰 검사 후 게시글 작성")
     @ApiImplicitParam(name = "Dto", value = "게시글 작성할 이미지list및 내용 입력")  // Swagger에 사용하는 파라미터에 대해 설명
@@ -104,4 +111,9 @@ public class ArticleController {
         return articleRepository.searchScroll(pageable,userDetails);
     }
 
+    @Secured("Role_USER")
+    @GetMapping("/auth/search")
+    public List<ArticleResponseDto> searchArticle(ArticleSearchCondition condition, @AuthenticationPrincipal UserDetails userDetails){
+        return articleRepository.search(condition, userDetails);
+    }
 }

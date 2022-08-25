@@ -65,6 +65,7 @@ public class AuthController {
             @ApiResponse(code = 400, message = "Request타입 에러"),
             @ApiResponse(code = 500, message = "서버 에러")
     })
+
     @PostMapping("/login") // 로그인
     public Optional<Member> login(@RequestBody MemberRequestDto memberRequestDto, HttpServletResponse response) {
         TokenDto tokenDto = authService.login(memberRequestDto);
@@ -86,9 +87,17 @@ public class AuthController {
         return ResponseEntity.ok(authService.reissue(tokenRequestDto));
     }
 
+    @ApiOperation(value = "검색 API", notes = "파라미터로 검색 내용을 전달하여 검색")
+    @ApiImplicitParam(name = "condition", value = "userNic에서 쓰이는 내용들을 파라미터로 날리기")  // Swagger에 사용하는 파라미터에 대해 설명
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "API 정상 작동"),
+            @ApiResponse(code = 400, message = "Request타입 에러"),
+            @ApiResponse(code = 500, message = "서버 에러")
+    })
+
     @Secured("Role_USER")
-    @GetMapping("auth/search")
-    public List<MemberDto> addArticleHeart(MemberSearchCondition condition, @AuthenticationPrincipal UserDetails userDetails){
-        return memberService.getMember(condition,userDetails);
+    @GetMapping("/auth/search")
+    public List<MemberDto> getMember(MemberSearchCondition condition){
+        return memberService.getMember(condition);
     }
 }

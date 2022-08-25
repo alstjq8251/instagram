@@ -64,6 +64,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers(HttpMethod.OPTIONS, "/api/**").permitAll() // CORS설정 관련 security 열어주기
                 .antMatchers(PERMIT_URL_ARRAY).permitAll() // swagger사용을 위해 api 열기
+                .antMatchers(HttpMethod.GET,"api/member/auth/search").authenticated()
+                .antMatchers(HttpMethod.GET,"api/article/auth/search").authenticated()
                 .antMatchers("/api/member/**").permitAll()
                 .antMatchers(HttpMethod.GET,"/api/article/all").permitAll()
                 .antMatchers(HttpMethod.GET,"/api/article/{id}").permitAll()

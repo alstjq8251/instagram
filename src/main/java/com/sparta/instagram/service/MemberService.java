@@ -34,7 +34,7 @@ public class MemberService {
                 .orElseThrow(() -> new IllegalArgumentException("로그인 유저 정보가 없습니다."));
     }
 
-    public List<MemberDto> getMember(MemberSearchCondition condition, UserDetails userDetails) {
+    public List<MemberDto> getMember(MemberSearchCondition condition) {
         return memberRepository.search(condition);
     }
 }

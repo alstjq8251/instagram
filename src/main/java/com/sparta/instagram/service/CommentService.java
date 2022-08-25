@@ -27,6 +27,7 @@ public class CommentService {
         List<Comment> commentList = commentRepository.findAllByParent_IdIsNullOrderByModifiedAtDesc();
         String info[] = userDetails.getUsername().split(" ");
         boolean userFlag = false;
+        boolean userLike = false;
         List<CommentResponseDto> commentResponseDtoList = new ArrayList<>();
         for(Comment comment : commentList){
             if(info[0].equals(comment.getUserId())){
@@ -37,6 +38,9 @@ public class CommentService {
             for(Map.Entry<String,Boolean> entryset2 : entryset1){
                 if(entryset2.getValue() && entryset2.getKey().equals(info[0]))
                     count++;
+            }
+            if(comment.getHeartmap().containsKey(info[0])){
+                userLike = comment.getHeartmap().get(info[0]);
             }
             commentResponseDtoList.add(CommentResponseDto.builder()
                     .id(comment.getId())
@@ -49,6 +53,7 @@ public class CommentService {
                     .commentbabycnt(comment.getCommentbabylist().size())
                     .modifiedAt(comment.getModifiedAt())
                     .userFlag(userFlag)
+                    .userLike(userLike)
                     .TimeMsg(Time.calculateTime(comment.getCreatedAt()))
                     .content(comment.getContent())
                     .build());
@@ -58,9 +63,10 @@ public class CommentService {
     public List<CommentResponseDto> readbabyCommentAll(UserDetails userDetails) {
         List<Comment> commentList = commentRepository.findAllByParent_IdIsNotNullOrderByModifiedAtDesc();
         String info[] = userDetails.getUsername().split(" ");
-        boolean userFlag = false;
         List<CommentResponseDto> commentResponseDtoList = new ArrayList<>();
         for(Comment comment : commentList){
+            boolean userFlag = false;
+            boolean userLike = false;
             if(info[0].equals(comment.getUserId())){
                 userFlag=true;
             }
@@ -70,6 +76,9 @@ public class CommentService {
                 if(entryset2.getValue() && entryset2.getKey().equals(info[0]))
                     count++;
             }
+            if(comment.getHeartmap().containsKey(info[0])){
+                userLike = comment.getHeartmap().get(info[0]);
+            }
             commentResponseDtoList.add(CommentResponseDto.builder()
                     .id(comment.getId())
                     .createdAt(comment.getCreatedAt())
@@ -78,6 +87,7 @@ public class CommentService {
                     .userNic(comment.getUserNic())
                     .userName(comment.getUserNic())
                     .heartcnt(count)
+                    .userLike(userLike)
                     .commentbabycnt(comment.getCommentbabylist().size())
                     .modifiedAt(comment.getModifiedAt())
                     .userFlag(userFlag)
@@ -200,7 +210,9 @@ public class CommentService {
                 .orElseThrow(() -> new IllegalArgumentException("해당 댓글이 없습니다."));
         long count=0;
         String info[] = userDetails.getUsername().split(" ");
-        comment.fixCommentMap(info[0], !comment.getHeartmap().get(info[0]));
+        if(comment.getHeartmap().containsKey(info[0])) {
+            comment.fixCommentMap(info[0], !comment.getHeartmap().get(info[0]));
+        }else comment.addCommentMap(info[0],true);
         Set<Map.Entry<String,Boolean>> entryset1 = comment.getHeartmap().entrySet();
         for(Map.Entry<String,Boolean> entryset2 : entryset1){
             if(entryset2.getValue() && entryset2.getKey().equals(info[0]))

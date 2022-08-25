@@ -60,6 +60,9 @@ public class Comment extends Timestamped {
         heartmap.replace(username,userFlag);
     }
 
+    public void addCommentMap(String userName, boolean userFlag){
+        heartmap.put(userName,userFlag);
+    }
     public void fixComment(String content) {
         this.content = content;
     }

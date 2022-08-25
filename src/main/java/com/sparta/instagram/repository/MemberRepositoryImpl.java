@@ -29,7 +29,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     public List<MemberDto> search(MemberSearchCondition condition) {
         List<Member> fetch = queryFactory
                 .selectFrom(member)
-                .where(userIdEq(condition.getUserId())).fetch();
+                .where(userNicEq(condition.getUserNic())).fetch();
         List <MemberDto> memberDtoList = new ArrayList<>();
         for(Member member: fetch) {
             memberDtoList.add(MemberDto.builder()
@@ -57,7 +57,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     }
 
 
-    private BooleanExpression userIdEq(String userId) {
-        return isEmpty(userId) ? null : member.userId.contains(userId);
+    private BooleanExpression userNicEq(String userNic) {
+        return isEmpty(userNic) ? null : member.userNic.contains(userNic);
     }
 }

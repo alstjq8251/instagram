@@ -13,12 +13,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class CustomerUserDetailsService implements UserDetailsService {
 
     private final MemberRepository memberRepository;
+
+
+//    @Override
+//    @Transactional
+//    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+//        Optional<Member> member = memberRepository.findByUserId(username);
+//        if(!member.isPresent()){
+//            throw new IllegalArgumentException("존재하지 않습니다.");
+//        }
+//        return new Principaldetail(member.get());}
 
     @Override
     @Transactional

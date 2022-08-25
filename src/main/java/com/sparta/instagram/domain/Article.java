@@ -60,6 +60,10 @@ public class Article extends Timestamped {
         this.imageList.remove(image);
     }
 
+    public void addHeartMap(String userName, boolean userFlag) {
+        heartmap.put(userName,userFlag);
+    }
+
     public void fixHeartMap(String username, boolean userFlag){
         heartmap.replace(username,userFlag);
     }
