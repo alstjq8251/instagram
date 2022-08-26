@@ -2,14 +2,12 @@ package com.sparta.instagram.service;
 
 
 import com.sparta.instagram.domain.*;
-import com.sparta.instagram.domain.dto.ArticleSearchCondition;
-import com.sparta.instagram.domain.dto.MemberSearchCondition;
 import com.sparta.instagram.domain.dto.requestdto.ArticleRequestDto;
 import com.sparta.instagram.domain.dto.responsedto.ArticleResponseDto;
 import com.sparta.instagram.domain.dto.S3Dto;
 import com.sparta.instagram.domain.dto.Time;
 import com.sparta.instagram.domain.dto.responsedto.HeartResponseDto;
-import com.sparta.instagram.domain.dto.responsedto.MemberDto;
+import com.sparta.instagram.jwt.Principaldetail;
 import com.sparta.instagram.repository.ArticleRepository;
 import com.sparta.instagram.repository.DeletedUrlPathRepository;
 //import com.sparta.instagram.repository.HeartRepository;
@@ -48,7 +46,6 @@ public class ArticleService {
         if(requestDto.getContent() == null){
             throw new IllegalArgumentException("게시글 작성시 내용을 작성하여 등록해주세요");
         }
-
         String info[] = userDetails.getUsername().split(" ");
         List<Image> imageList = new ArrayList<>();
         Map<String, Boolean> map = new HashMap() {{  // 용량을 동적으로 늘리는 Map을 만들어라 -> 순서가 유지안됨 iterator 넣은순서가유지가안됨!
@@ -92,8 +89,10 @@ public class ArticleService {
     }
 
     //게시글 전체 조회
-    public List<ArticleResponseDto> readArticle(UserDetails userDetails) {
-        String info[] = userDetails.getUsername().split(" ");
+    public List<ArticleResponseDto> readArticle(Principaldetail principaldetail) {
+        Member member = principaldetail.getMember();
+        System.out.println(member);
+        String info[] = principaldetail.getUsername().split(" ");
         long count = 0;
         List<Article> articleList = articleRepository.findAllByOrderByModifiedAtDesc();
         List<ArticleResponseDto> articleResponseDtoList = new ArrayList<>();
@@ -172,7 +171,6 @@ public class ArticleService {
                     .build();
             deletedUrlPathRepository.save(deletedUrlPath);
             article.deleteImage(image);
-
         }
         articleRepository.delete(article);
         return true;

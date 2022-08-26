@@ -40,6 +40,13 @@ public class JwtFilter extends OncePerRequestFilter {
             if(StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 Authentication authentication = tokenProvider.getAuthentication(jwt);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                System.out.println("------------------------------");
+                System.out.println("------------------------------");
+                System.out.println("---------ㅇ---------------------");
+                System.out.println(SecurityContextHolder.getContext().getAuthentication());
+                System.out.println("----------ㅇ--------------------");
+                System.out.println("------------------------------");
+                System.out.println("------------------------------");
             }
         }catch(ExpiredJwtException e) {
             request.setAttribute("exception", Code.EXPIRED_TOKEN.getCode());

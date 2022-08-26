@@ -1,7 +1,9 @@
-package com.sparta.instagram.service;
+package com.sparta.instagram.jwt;
 
 import com.sparta.instagram.domain.Member;
+import com.sparta.instagram.repository.MemberRepository;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -11,7 +13,11 @@ import java.util.Collection;
 @Data
 public class Principaldetail implements UserDetails {
 
-    private Member member;
+    private final Member member;
+
+    public Member getMember(){
+        return member;
+    }
 
     public Principaldetail(Member member){
         this.member = member;
@@ -35,7 +41,7 @@ public class Principaldetail implements UserDetails {
     }
     @Override
     public String getUsername(){
-        return this.member.getUserName();
+        return this.member.getUserId();
     }
 
     @Override
@@ -53,6 +59,7 @@ public class Principaldetail implements UserDetails {
         return true;
     }
 
+    @Override
     public boolean isEnabled(){
         return true;
     }

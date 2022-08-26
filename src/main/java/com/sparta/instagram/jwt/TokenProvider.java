@@ -1,10 +1,14 @@
 package com.sparta.instagram.jwt;
 
 
+import com.sparta.instagram.domain.Authority;
+import com.sparta.instagram.domain.Member;
 import com.sparta.instagram.domain.dto.responsedto.TokenDto;
+import com.sparta.instagram.repository.MemberRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,11 +18,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 import java.security.Key;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -27,6 +30,11 @@ public class TokenProvider {
 
     private static final String AUTHORITIES_KEY = "auth";
     private static final String BEARER_TYPE = "bearer";
+
+    private static final String MEMBER_KEY = "member";
+
+    private static final String Name_KEY = "name";
+
     private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 30;            // 30분
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7;  // 7일
     private final Key key;
@@ -36,19 +44,20 @@ public class TokenProvider {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public TokenDto generateTokenDto(Authentication authentication) {
+    public TokenDto generateTokenDto(Authentication authentication,Member member) {
         // 권한들 가져오기
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
-
 
         long now = new Date().getTime();
 
         // Access Token 생성
         Date accessTokenExpiresIn = new Date(now + ACCESS_TOKEN_EXPIRE_TIME);
         String accessToken = Jwts.builder()
-                .setSubject(authentication.getName())       // payload "sub": "name"
+                .setSubject(member.getUserId())       // payload "sub": "name"
+                .claim(MEMBER_KEY,member.getUserNic())      // payload "member" : "member.getUserNic"
+                .claim(Name_KEY,member.getUserName())       // payload "member" : "member.getUserNic"
                 .claim(AUTHORITIES_KEY, authorities)        // payload "auth": "ROLE_USER"
                 .setExpiration(accessTokenExpiresIn)        // payload "exp": 1516239022 (예시)
                 .signWith(key, SignatureAlgorithm.HS512)    // header "alg": "HS512"
@@ -92,10 +101,21 @@ public class TokenProvider {
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
+        Authority authority;
+        if(Authority.ROLE_USER.equals(claims.get(AUTHORITIES_KEY))){
+            authority = Authority.ROLE_USER;
+        } else {authority = Authority.ROLE_ADMIN;}
+        Member member = Member.builder()
+                .authority(authority)
+                .userId(claims.getSubject())
+                .userNic(claims.get(MEMBER_KEY).toString())
+                .userName(claims.get(Name_KEY).toString())
+                .build();
+
+        Principaldetail principaldetail = new Principaldetail(member);
         // UserDetails 객체를 만들어서 Authentication 리턴
         UserDetails principal = new User(claims.getSubject(), "", authorities);
-
-        return new UsernamePasswordAuthenticationToken(principal, "", authorities);
+        return new UsernamePasswordAuthenticationToken(principaldetail, "", authorities);
     }
 
     public boolean validateToken(String token) {

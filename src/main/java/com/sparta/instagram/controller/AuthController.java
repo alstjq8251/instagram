@@ -65,7 +65,6 @@ public class AuthController {
             @ApiResponse(code = 400, message = "Request타입 에러"),
             @ApiResponse(code = 500, message = "서버 에러")
     })
-
     @PostMapping("/login") // 로그인
     public Optional<Member> login(@RequestBody MemberRequestDto memberRequestDto, HttpServletResponse response) {
         TokenDto tokenDto = authService.login(memberRequestDto);

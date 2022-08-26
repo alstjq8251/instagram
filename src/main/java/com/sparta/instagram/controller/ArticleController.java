@@ -8,6 +8,7 @@ import com.sparta.instagram.domain.dto.responsedto.ArticleResponseDto;
 import com.sparta.instagram.domain.dto.responsedto.HeartResponseDto;
 import com.sparta.instagram.repository.ArticleRepository;
 import com.sparta.instagram.service.ArticleService;
+import com.sparta.instagram.jwt.Principaldetail;
 import io.swagger.annotations.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Slice;
@@ -39,10 +40,9 @@ public class ArticleController {
             @ApiResponse(code = 400, message = "Request타입 에러"),
             @ApiResponse(code = 500, message = "서버 에러")
     })
-
     @GetMapping("/auth")
-    public List<ArticleResponseDto> readArticle(@AuthenticationPrincipal UserDetails userDetails) {
-        return articleService.readArticle(userDetails);
+    public List<ArticleResponseDto> readArticle(@AuthenticationPrincipal Principaldetail principaldetail) {
+        return articleService.readArticle(principaldetail);
     }
 
 //    @GetMapping("/auth/all")
@@ -98,20 +98,21 @@ public class ArticleController {
             @ApiResponse(code = 400, message = "Request타입 에러"),
             @ApiResponse(code = 500, message = "서버 에러")
     })
-    @Secured("Role_USER")
+
+    @Secured("ROLE_USER")
     @PatchMapping("/auth/heart/{id}")
-    public HeartResponseDto addArticleHeart(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails){
-        return articleService.addArticleHeart(id,userDetails);
+    public HeartResponseDto addArticleHeart(@PathVariable Long id, @AuthenticationPrincipal Principaldetail principaldetail){
+        return articleService.addArticleHeart(id,principaldetail);
     }
 
 
-    @Secured("Role_USER")
+    @Secured("ROLE_USER")
     @GetMapping("/auth/scroll")
-    public Slice<ArticleResponseDto> scrollArticle(Pageable pageable, UserDetails userDetails){
+    public Slice<ArticleResponseDto> scrollArticle(Pageable pageable, @AuthenticationPrincipal UserDetails userDetails){
         return articleRepository.searchScroll(pageable,userDetails);
     }
 
-    @Secured("Role_USER")
+    @Secured("ROLE_USER")
     @GetMapping("/auth/search")
     public List<ArticleResponseDto> searchArticle(ArticleSearchCondition condition, @AuthenticationPrincipal UserDetails userDetails){
         return articleRepository.search(condition, userDetails);

@@ -7,6 +7,7 @@ import com.sparta.instagram.domain.dto.requestdto.MemberCheckupDto;
 import com.sparta.instagram.domain.dto.requestdto.MemberRequestDto;
 import com.sparta.instagram.domain.dto.responsedto.TokenDto;
 import com.sparta.instagram.domain.dto.requestdto.TokenRequestDto;
+import com.sparta.instagram.jwt.Principaldetail;
 import com.sparta.instagram.jwt.TokenProvider;
 import com.sparta.instagram.repository.MemberRepository;
 import com.sparta.instagram.repository.RefreshTokenRepository;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,9 +56,11 @@ public class AuthService {
         try{
             Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
+//            UserDetails userDetails = (UserDetails)
+            Principaldetail principaldetail = (Principaldetail)authentication.getPrincipal();
 
             // 3. 인증 정보를 기반으로 JWT 토큰 생성
-            TokenDto tokenDto = tokenProvider.generateTokenDto(authentication);
+            TokenDto tokenDto = tokenProvider.generateTokenDto(authentication,principaldetail.getMember());
 
             // 4. RefreshToken 저장
             RefreshToken refreshToken = RefreshToken.builder()
@@ -84,6 +88,8 @@ public class AuthService {
         // 2. Access Token 에서 Member ID 가져오기
         Authentication authentication = tokenProvider.getAuthentication(tokenRequestDto.getAccessToken());
 
+        Principaldetail principaldetail = (Principaldetail)authentication.getPrincipal();
+
         // 3. 저장소에서 Member ID 를 기반으로 Refresh Token 값 가져옴
         RefreshToken refreshToken = refreshTokenRepository.findByKey(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("로그아웃 된 사용자입니다."));
@@ -94,7 +100,7 @@ public class AuthService {
         }
 
         // 5. 새로운 토큰 생성
-        TokenDto tokenDto = tokenProvider.generateTokenDto(authentication);
+        TokenDto tokenDto = tokenProvider.generateTokenDto(authentication,principaldetail.getMember());
 
         // 6. 저장소 정보 업데이트
         RefreshToken newRefreshToken = refreshToken.updateValue(tokenDto.getRefreshToken());
